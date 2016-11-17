@@ -4,9 +4,9 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Random
 
 object Main {
-  val RANDOM = scala.util.Random
   val PEOPLE_COUNT = 5
 
   var system: ActorSystem = null
@@ -63,7 +63,7 @@ object Main {
     }
 
     def randomTime: FiniteDuration = {
-      FiniteDuration(RANDOM.nextInt(5000), TimeUnit.MILLISECONDS)
+      FiniteDuration(Random nextInt 5000, TimeUnit.MILLISECONDS)
     }
   }
 

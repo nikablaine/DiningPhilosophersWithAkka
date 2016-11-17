@@ -2,34 +2,28 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 
+import scala.collection.immutable.IndexedSeq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Random
 
 object Main {
-  val RANDOM = scala.util.Random
-  val PEOPLE_COUNT = 5
+  val peopleCount = 5
 
-  var system: ActorSystem = null
-  var waiter: ActorRef = null
-  var developers: Vector[ActorRef] = Vector()
+  lazy val system: ActorSystem = ActorSystem("DiningDevelopers")
+  lazy val waiter: ActorRef = createWaiter
+  lazy val developers: Seq[ActorRef] = 0 until 5 map createDeveloper
 
   def main(args: Array[String]): Unit = {
-    system = ActorSystem("DiningDevelopers")
-    Range(0, 5).foreach(int => developers = developers :+ createDeveloper(int))
-    waiter = createWaiter
 
-    developers.foreach(dev => dev ! Start)
+    developers.par.foreach(dev => dev ! Start)
     // system terminate()
   }
 
-  def createWaiter: ActorRef = {
-    system.actorOf(Props[Waiter], name = "waiter")
-  }
+  def createWaiter: ActorRef = system.actorOf(Props[Waiter], name = "waiter")
 
-  def createDeveloper(index: Int): ActorRef = {
+  def createDeveloper(index: Int): ActorRef =
     system.actorOf(Props(classOf[Developer], index), name = "developer" + index)
-  }
-
 
   class Developer(index: Int) extends Actor {
     override def receive: Receive = {
@@ -63,12 +57,12 @@ object Main {
     }
 
     def randomTime: FiniteDuration = {
-      FiniteDuration(RANDOM.nextInt(5000), TimeUnit.MILLISECONDS)
+      FiniteDuration(Random nextInt 5000, TimeUnit.MILLISECONDS)
     }
   }
 
   class Waiter extends Actor {
-    var forks = Vector.fill(5)(true)
+    var forks = Vector.fill(peopleCount)(true)
 
     override def receive: Receive = {
       case WannaBailOutAndEat(index) =>
@@ -78,7 +72,7 @@ object Main {
     }
 
     def isForksAvailable(index: Int): Boolean = {
-      forks(index) && forks((index + 1) % 5)
+      forks(index) && forks((index + 1) % peopleCount)
     }
 
     def freeTheForks(index: Int): Unit = {
@@ -92,14 +86,14 @@ object Main {
 
     def updateForks(index: Int, value: Boolean): Unit = {
       forks = forks updated(index, value)
-      forks = forks updated((index + 1) % PEOPLE_COUNT, value)
+      forks = forks updated((index + 1) % peopleCount, value)
     }
 
     def noFood(index: Int): Unit = {
       developers(index) ! TheBuildIsBroken
     }
 
-    def info(string: String): Unit = println("Waiter: " + string)
+    def info(string: String): Unit = println(s"Waiter: $string")
 
   }
 

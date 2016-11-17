@@ -14,7 +14,7 @@ object Main {
   var developers: Vector[ActorRef] = Vector()
 
   def main(args: Array[String]): Unit = {
-    Range(0, 5).foreach(int => developers = developers :+ createDeveloper(int))
+    0 until 5 foreach (int => developers = developers :+ createDeveloper(int))
 
     developers.foreach(dev => dev ! Start)
     // system terminate()

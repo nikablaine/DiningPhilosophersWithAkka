@@ -2,6 +2,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 
+import scala.collection.immutable.IndexedSeq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
@@ -11,10 +12,9 @@ object Main {
 
   lazy val system: ActorSystem = ActorSystem("DiningDevelopers")
   lazy val waiter: ActorRef = createWaiter
-  var developers: Vector[ActorRef] = Vector()
+  lazy val developers: Seq[ActorRef] = 0 until 5 map createDeveloper
 
   def main(args: Array[String]): Unit = {
-    0 until 5 foreach (int => developers = developers :+ createDeveloper(int))
 
     developers.foreach(dev => dev ! Start)
     // system terminate()

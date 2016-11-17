@@ -72,7 +72,7 @@ object Main {
     }
 
     def isForksAvailable(index: Int): Boolean = {
-      forks(index) && forks((index + 1) % 5)
+      forks(index) && forks((index + 1) % peopleCount)
     }
 
     def freeTheForks(index: Int): Unit = {
@@ -93,7 +93,7 @@ object Main {
       developers(index) ! TheBuildIsBroken
     }
 
-    def info(string: String): Unit = println("Waiter: " + string)
+    def info(string: String): Unit = println(s"Waiter: $string")
 
   }
 

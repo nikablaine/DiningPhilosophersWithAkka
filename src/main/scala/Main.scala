@@ -62,7 +62,7 @@ object Main {
   }
 
   class Waiter extends Actor {
-    var forks = Vector.fill(5)(true)
+    var forks = Vector.fill(peopleCount)(true)
 
     override def receive: Receive = {
       case WannaBailOutAndEat(index) =>

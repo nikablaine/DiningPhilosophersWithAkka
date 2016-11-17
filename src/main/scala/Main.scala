@@ -16,7 +16,7 @@ object Main {
 
   def main(args: Array[String]): Unit = {
 
-    developers.foreach(dev => dev ! Start)
+    developers.par.foreach(dev => dev ! Start)
     // system terminate()
   }
 

@@ -20,14 +20,10 @@ object Main {
     // system terminate()
   }
 
-  def createWaiter: ActorRef = {
-    system.actorOf(Props[Waiter], name = "waiter")
-  }
+  def createWaiter: ActorRef = system.actorOf(Props[Waiter], name = "waiter")
 
-  def createDeveloper(index: Int): ActorRef = {
+  def createDeveloper(index: Int): ActorRef =
     system.actorOf(Props(classOf[Developer], index), name = "developer" + index)
-  }
-
 
   class Developer(index: Int) extends Actor {
     override def receive: Receive = {

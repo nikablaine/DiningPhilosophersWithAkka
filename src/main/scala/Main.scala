@@ -2,7 +2,6 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 
-import scala.collection.immutable.IndexedSeq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
@@ -15,9 +14,17 @@ object Main {
   lazy val developers: Seq[ActorRef] = 0 until 5 map createDeveloper
 
   def main(args: Array[String]): Unit = {
-
     developers.par.foreach(dev => dev ! Start)
-    // system terminate()
+
+    // we'll assume that after 2 minutes the coding day is over
+    developers.par.foreach(dev => dev !!! Stop)
+    waiter !!! Stop
+  }
+
+  implicit class ActorOps(actor: ActorRef) {
+    def !!!(message: Msg): Unit = {
+      system.scheduler.scheduleOnce(FiniteDuration(2, TimeUnit.MINUTES), actor, message)
+    }
   }
 
   def createWaiter: ActorRef = system.actorOf(Props[Waiter], name = "waiter")
@@ -29,31 +36,33 @@ object Main {
     override def receive: Receive = {
       case Start =>
         info("Starting a nice day of coding")
-        !!(waiter, WannaBailOutAndEat(index))
+        waiter !! WannaBailOutAndEat(index)
       case PleaseEat =>
         info("OK, time to eat! Eating..")
-        !!(self, WannaCodeAgain)
+        self !! WannaCodeAgain
       case WannaCodeAgain =>
         info("One hell of a meal! Coding again..")
         waiter ! StoppedEating(index)
-        !!(self, StopCoding)
+        self !! StopCoding
       case TheBuildIsBroken =>
         info("The build is broken. No time to eat! Coding..")
-        !!(self, StopCoding)
+        self !! StopCoding
       case StopCoding =>
-        info("Yawn. I'm hungry!")
+        info("Yawn. I'm hungry! Can I eat?")
         waiter ! WannaBailOutAndEat(index)
       case Stop =>
-        info("Stopping..")
+        info("Oops. No tasks closed today. Will work on them tomorrow.")
         context stop self
     }
 
-    var developerLine: String = "Developer" + index + ": "
+    var developerLine: String = s"Developer$index: "
 
-    def info(string: String): Unit = println(developerLine + string)
+    def info(string: String): Unit = println(s"$developerLine$string")
 
-    def !!(actor: ActorRef, message: Msg): Unit = {
-      system.scheduler.scheduleOnce(randomTime, actor, message)
+    implicit class ActorOps(actor: ActorRef) {
+      def !!(message: Msg): Unit = {
+        system.scheduler.scheduleOnce(randomTime, actor, message)
+      }
     }
 
     def randomTime: FiniteDuration = {
@@ -69,6 +78,10 @@ object Main {
         if (isForksAvailable(index)) prepareForksAndGiveTheFood(index) else noFood(index)
       case StoppedEating(index) =>
         freeTheForks(index)
+      case Stop =>
+        info("Time to go home and watch a movie. I'll shut down the system.")
+        context stop self
+        system terminate
     }
 
     def isForksAvailable(index: Int): Boolean = {
@@ -81,6 +94,7 @@ object Main {
 
     def prepareForksAndGiveTheFood(index: Int): Unit = {
       updateForks(index, false)
+      info(s"Developer$index, here's your tasty burger!")
       developers(index) ! PleaseEat
     }
 
@@ -90,12 +104,13 @@ object Main {
     }
 
     def noFood(index: Int): Unit = {
+      info(s"Developer$index, check the Jenkins server!")
       developers(index) ! TheBuildIsBroken
     }
 
     def info(string: String): Unit = println(s"Waiter: $string")
-
   }
+
 
   sealed trait Msg
 

@@ -7,7 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
 object Main {
-  val PEOPLE_COUNT = 5
+  val peopleCount = 5
 
   var system: ActorSystem = null
   var waiter: ActorRef = null
@@ -92,7 +92,7 @@ object Main {
 
     def updateForks(index: Int, value: Boolean): Unit = {
       forks = forks updated(index, value)
-      forks = forks updated((index + 1) % PEOPLE_COUNT, value)
+      forks = forks updated((index + 1) % poepleCount, value)
     }
 
     def noFood(index: Int): Unit = {

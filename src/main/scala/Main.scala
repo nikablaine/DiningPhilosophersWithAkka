@@ -48,7 +48,7 @@ object Main {
         !!(self, StopCoding)
       case StopCoding =>
         info("Yawn. I'm hungry!")
-        waiter ! WannaBailOutAndEat
+        waiter ! WannaBailOutAndEat(index)
       case Stop =>
         info("Stopping..")
         context stop self

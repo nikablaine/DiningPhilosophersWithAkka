@@ -9,14 +9,12 @@ import scala.util.Random
 object Main {
   val peopleCount = 5
 
-  var system: ActorSystem = null
-  var waiter: ActorRef = null
+  lazy val system: ActorSystem = ActorSystem("DiningDevelopers")
+  lazy val waiter: ActorRef = createWaiter
   var developers: Vector[ActorRef] = Vector()
 
   def main(args: Array[String]): Unit = {
-    system = ActorSystem("DiningDevelopers")
     Range(0, 5).foreach(int => developers = developers :+ createDeveloper(int))
-    waiter = createWaiter
 
     developers.foreach(dev => dev ! Start)
     // system terminate()
@@ -92,7 +90,7 @@ object Main {
 
     def updateForks(index: Int, value: Boolean): Unit = {
       forks = forks updated(index, value)
-      forks = forks updated((index + 1) % poepleCount, value)
+      forks = forks updated((index + 1) % peopleCount, value)
     }
 
     def noFood(index: Int): Unit = {

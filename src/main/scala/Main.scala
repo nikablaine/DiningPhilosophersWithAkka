@@ -9,64 +9,60 @@ import scala.util.Random
 object Main {
   val peopleCount = 5
 
-  lazy val system: ActorSystem = ActorSystem("DiningDevelopers")
+  lazy val system: ActorSystem = ActorSystem("CodingDevelopers")
   lazy val waiter: ActorRef = createWaiter
   lazy val developers: Seq[ActorRef] = 0 until 5 map createDeveloper
 
   def main(args: Array[String]): Unit = {
     developers.par.foreach(dev => dev ! Start)
 
-    // we'll assume that after 2 minutes the coding day is over
+    // we'll assume that after 1 minute the coding day is over
     developers.par.foreach(dev => dev !!! Stop)
     waiter !!! Stop
   }
 
-  implicit class ActorOps(actor: ActorRef) {
-    def !!!(message: Msg): Unit = {
-      system.scheduler.scheduleOnce(FiniteDuration(2, TimeUnit.MINUTES), actor, message)
+  implicit class ActorRefOps(actor: ActorRef) {
+
+    def !!(message: Msg): Unit = system.scheduler.scheduleOnce(randomTime, actor, message)
+
+    def !!!(message: Msg): Unit = system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.MINUTES), actor, message)
+
+    def info(string: String): Unit = {
+      val name = actor.path.name
+      println(s"$name: $string")
     }
   }
 
-  def createWaiter: ActorRef = system.actorOf(Props[Waiter], name = "waiter")
+  def randomTime: FiniteDuration = {
+    FiniteDuration(Random nextInt 5000, TimeUnit.MILLISECONDS)
+  }
+
+  def createWaiter: ActorRef = system.actorOf(Props[Waiter], name = "Waiter")
 
   def createDeveloper(index: Int): ActorRef =
-    system.actorOf(Props(classOf[Developer], index), name = "developer" + index)
+    system.actorOf(Props(classOf[Developer], index), name = "Developer" + index)
 
   class Developer(index: Int) extends Actor {
     override def receive: Receive = {
       case Start =>
-        info("Starting a nice day of coding")
+        self info "Starting a nice day of coding"
         waiter !! WannaBailOutAndEat(index)
       case PleaseEat =>
-        info("OK, time to eat! Eating..")
+        self info "OK, time to eat! Eating.."
         self !! WannaCodeAgain
       case WannaCodeAgain =>
-        info("One hell of a meal! Coding again..")
+        self info "One hell of a meal! Coding again.."
         waiter ! StoppedEating(index)
         self !! StopCoding
       case TheBuildIsBroken =>
-        info("The build is broken. No time to eat! Coding..")
+        self info "The build is broken. No time to eat! Coding.."
         self !! StopCoding
       case StopCoding =>
-        info("Yawn. I'm hungry! Can I eat?")
+        self info "Yawn. I'm hungry! Can I eat?"
         waiter ! WannaBailOutAndEat(index)
       case Stop =>
-        info("Oops. No tasks closed today. Will work on them tomorrow.")
+        self info "Oops. No tasks closed today. Will work on them tomorrow."
         context stop self
-    }
-
-    var developerLine: String = s"Developer$index: "
-
-    def info(string: String): Unit = println(s"$developerLine$string")
-
-    implicit class ActorOps(actor: ActorRef) {
-      def !!(message: Msg): Unit = {
-        system.scheduler.scheduleOnce(randomTime, actor, message)
-      }
-    }
-
-    def randomTime: FiniteDuration = {
-      FiniteDuration(Random nextInt 5000, TimeUnit.MILLISECONDS)
     }
   }
 
@@ -79,7 +75,7 @@ object Main {
       case StoppedEating(index) =>
         freeTheForks(index)
       case Stop =>
-        info("Time to go home and watch a movie. I'll shut down the system.")
+        self info "Time to go home and watch a movie. I'll shut down the system."
         context stop self
         system terminate
     }
@@ -89,12 +85,12 @@ object Main {
     }
 
     def freeTheForks(index: Int): Unit = {
-      updateForks(index, true)
+      updateForks(index, value = true)
     }
 
     def prepareForksAndGiveTheFood(index: Int): Unit = {
-      updateForks(index, false)
-      info(s"Developer$index, here's your tasty burger!")
+      updateForks(index, value = false)
+      self info s"Developer$index, here's your tasty burger!"
       developers(index) ! PleaseEat
     }
 
@@ -104,13 +100,10 @@ object Main {
     }
 
     def noFood(index: Int): Unit = {
-      info(s"Developer$index, check the Jenkins server!")
+      self info s"Developer$index, check the Jenkins server!"
       developers(index) ! TheBuildIsBroken
     }
-
-    def info(string: String): Unit = println(s"Waiter: $string")
   }
-
 
   sealed trait Msg
 
@@ -119,8 +112,6 @@ object Main {
   case class StoppedEating(index: Int) extends Msg
 
   case object WannaCodeAgain extends Msg
-
-  case object GotACodingIdea extends Msg
 
   case object PleaseEat extends Msg
 

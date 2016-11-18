@@ -1,9 +1,7 @@
-import java.util.concurrent.TimeUnit
-
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.util.Random
 
 object Main {
@@ -25,7 +23,7 @@ object Main {
 
     def !!(message: Msg): Unit = system.scheduler.scheduleOnce(randomTime, actor, message)
 
-    def !!!(message: Msg): Unit = system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.MINUTES), actor, message)
+    def !!!(message: Msg): Unit = system.scheduler.scheduleOnce(1 minute, actor, message)
 
     def info(string: String): Unit = {
       val name = actor.path.name
@@ -33,9 +31,7 @@ object Main {
     }
   }
 
-  def randomTime: FiniteDuration = {
-    FiniteDuration(Random nextInt 5000, TimeUnit.MILLISECONDS)
-  }
+  def randomTime: FiniteDuration = Random nextInt 5000 millis
 
   def createWaiter: ActorRef = system.actorOf(Props[Waiter], name = "Waiter")
 
@@ -95,8 +91,7 @@ object Main {
     }
 
     def updateForks(index: Int, value: Boolean): Unit = {
-      forks = forks updated(index, value)
-      forks = forks updated((index + 1) % peopleCount, value)
+      forks = forks updated(index, value) updated((index + 1) % peopleCount, value)
     }
 
     def noFood(index: Int): Unit = {
